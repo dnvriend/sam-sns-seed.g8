@@ -61,7 +61,7 @@ class PersonReceivedTopic(topicName: String, ctx: SamContext) {
 @SNSConf(topic = "person-received")
 class PersonReceivedPublished extends SNSEventHandler {
   override def handle(events: List[SNSEvent], ctx: SamContext): Unit = {
-    val repo = new PersonRepository("person", ctx)
+    val repo = new PersonRepository("people", ctx)
     events.foreach { event =>
       val person = event.messageAs[Person]
       val id = repo.id
@@ -73,7 +73,7 @@ class PersonReceivedPublished extends SNSEventHandler {
 @ScheduleConf(schedule = "rate(1 minute)")
 class PutPersonScheduled extends ScheduledEventHandler {
   override def handle(event: ScheduledEvent, ctx: SamContext): Unit = {
-    val repo = new PersonRepository("person", ctx)
+    val repo = new PersonRepository("people", ctx)
     val topic = new PersonReceivedTopic("person-received", ctx)
     val id: String = repo.id
     val person = Person("schedule", Option(id))
@@ -85,7 +85,7 @@ class PutPersonScheduled extends ScheduledEventHandler {
 @HttpHandler(path = "/person", method = "post")
 class PostPerson extends ApiGatewayHandler {
   override def handle(request: HttpRequest, ctx: SamContext): HttpResponse = {
-    val repo = new PersonRepository("person", ctx)
+    val repo = new PersonRepository("people", ctx)
     val topic = new PersonReceivedTopic("person-received", ctx)
     val id: String = repo.id
     val person = request.bodyOpt[Person].get
@@ -98,7 +98,7 @@ class PostPerson extends ApiGatewayHandler {
 @HttpHandler(path = "/person", method = "get")
 class GetListOfPerson extends ApiGatewayHandler {
   override def handle(request: HttpRequest, ctx: SamContext): HttpResponse = {
-    val repo = new PersonRepository("person", ctx)
+    val repo = new PersonRepository("people", ctx)
     HttpResponse.ok.withBody(Json.toJson(repo.list))
   }
 }
@@ -106,7 +106,7 @@ class GetListOfPerson extends ApiGatewayHandler {
 @HttpHandler(path = "/person/{id}", method = "get")
 class GetPerson extends ApiGatewayHandler {
   override def handle(request: HttpRequest, ctx: SamContext): HttpResponse = {
-    val repo = new PersonRepository("person", ctx)
+    val repo = new PersonRepository("people", ctx)
     request.pathParamsOpt[Map[String, String]].getOrElse(Map.empty).get("id")
       .fold(HttpResponse.notFound.withBody(Json.toJson("Person not found")))(id => {
         HttpResponse.ok.withBody(Json.toJson(repo.get(id)))
